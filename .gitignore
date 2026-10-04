@@ -1,0 +1,7 @@
+﻿.env
+client_secret.json
+token.pickle
+assets/
+__pycache__/
+*.mp4
+*.mp3

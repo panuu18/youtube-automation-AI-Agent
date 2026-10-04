@@ -179,7 +179,30 @@ def generate_viral_clip(video_id: str, channel_name: str):
         "url": youtube_url
     }
 
+def get_random_latest_video():
+    print("🔍 Searching for a trending video from top Indian gamers...")
+    channels = [
+        {"name": "Techno Gamerz", "url": "https://www.youtube.com/@TechnoGamerzOfficial/videos"},
+        {"name": "Triggered Insaan", "url": "https://www.youtube.com/@TriggeredInsaan/videos"},
+        {"name": "Live Insaan", "url": "https://www.youtube.com/@LiveInsaan/videos"}
+    ]
+    import random
+    channel = random.choice(channels)
+    
+    ydl_opts = {'extract_flat': True, 'playlistend': 5, 'quiet': True}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(channel['url'], download=False)
+        entries = info.get('entries', [])
+        if entries:
+            video = random.choice(entries)
+            print(f"🎯 Picked: {video['title']} by {channel['name']}")
+            return video['id'], channel['name']
+    return None, None
+
 if __name__ == "__main__":
-    # Test on a very popular Techno Gamerz GTA V video (ID: Lz210wVf45E)
-    test_video_id = "Lz210wVf45E"
-    generate_viral_clip(test_video_id, "Techno Gamerz")
+    # Autonomously pick a trending video from a big Indian gaming channel
+    video_id, channel_name = get_random_latest_video()
+    if video_id:
+        generate_viral_clip(video_id, channel_name)
+    else:
+        print("❌ Could not find a trending video.")

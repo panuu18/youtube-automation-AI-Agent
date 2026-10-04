@@ -2,8 +2,10 @@ name: YouTube Automation Bot
 
 on:
   schedule:
-    # Runs automatically every day at 10:00 AM UTC
-    - cron: '0 10 * * *'
+    # 8:30 AM UTC = 2:00 PM IST (After school/college)
+    - cron: '30 8 * * *'
+    # 1:30 PM UTC = 7:00 PM IST (Evening prime time)
+    - cron: '30 13 * * *'
   workflow_dispatch: # This line adds a button so you can trigger it manually!
 
 jobs:

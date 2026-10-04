@@ -161,10 +161,22 @@ def generate_viral_clip(video_id: str, channel_name: str):
     final_short_path = os.path.join(assets_dir, f"viral_short_{video_id}.mp4")
     edit_viral_clip(full_video_path, data['start_time'], data['end_time'], channel_name, final_short_path)
     
+    # 5. Upload to YouTube
+    from modules.youtube_upload import upload_to_youtube
+    print("🚀 Initiating YouTube Upload...")
+    youtube_url = upload_to_youtube(
+        video_path=final_short_path,
+        title=data['title'],
+        description=data['description'],
+        tags=["gaming", "shorts", "viral", channel_name.lower().replace(" ", "")]
+    )
+    print(f"🎉 BOOM! Video is live: {youtube_url}")
+    
     return {
         "video_path": final_short_path,
         "title": data['title'],
-        "description": data['description']
+        "description": data['description'],
+        "url": youtube_url
     }
 
 if __name__ == "__main__":

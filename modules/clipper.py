@@ -200,9 +200,21 @@ def get_random_latest_video():
     return None, None
 
 if __name__ == "__main__":
-    # Autonomously pick a trending video from a big Indian gaming channel
-    video_id, channel_name = get_random_latest_video()
-    if video_id:
-        generate_viral_clip(video_id, channel_name)
+    # Autonomously pick a trending video, but retry if it doesn't have subtitles!
+    max_attempts = 5
+    for attempt in range(max_attempts):
+        video_id, channel_name = get_random_latest_video()
+        if not video_id:
+            print("❌ Could not find a trending video. Retrying...")
+            continue
+            
+        print(f"\n--- Attempt {attempt+1}: Checking {channel_name} (ID: {video_id}) ---")
+        result = generate_viral_clip(video_id, channel_name)
+        
+        if result:
+            print("🎉 Success! Bot finished its daily upload.")
+            break
+        else:
+            print("⚠️ This video failed (likely no subtitles). Throwing it away and finding a new one...\n")
     else:
-        print("❌ Could not find a trending video.")
+        print("❌ Bot failed to find a working video after 5 attempts. Giving up for today.")

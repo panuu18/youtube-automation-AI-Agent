@@ -36,8 +36,8 @@ def get_transcript(video_id: str):
         # Format transcript with timestamps so AI knows exactly when things happen
         formatted_transcript = ""
         for item in transcript_list:
-            start = int(item['start'])
-            text = item['text'].replace('\n', ' ')
+            start = int(item.start)
+            text = item.text.replace('\n', ' ')
             formatted_transcript += f"[{start}s] {text}\n"
             
         return formatted_transcript
@@ -68,14 +68,17 @@ def analyze_transcript(transcript_text: str, channel_name: str):
     }}
     """
     
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt
-    )
-    
-    # Clean the JSON output
-    json_text = response.text.replace("```json", "").replace("```", "").strip()
-    return json.loads(json_text)
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=prompt
+        )
+        # Clean the JSON output
+        json_text = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(json_text)
+    except Exception as e:
+        print(f"⚠️ AI Server Error (Too busy?): {e}")
+        return None
 
 def download_video(video_id: str, output_path: str):
     print(f"📥 Downloading full video {video_id}...")
@@ -147,6 +150,8 @@ def generate_viral_clip(video_id: str, channel_name: str):
         
     # 2. Ask Gemini for the best moment
     data = analyze_transcript(transcript, channel_name)
+    if not data:
+        return None
     print(f"✨ AI Found Viral Moment! {data['start_time']}s to {data['end_time']}s")
     print(f"📝 Title: {data['title']}")
     

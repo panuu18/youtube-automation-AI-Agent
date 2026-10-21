@@ -80,23 +80,31 @@ def analyze_transcript(transcript_text: str, channel_name: str):
         print(f"⚠️ AI Server Error (Too busy?): {e}")
         return None
 
-def download_video(video_id: str, output_path: str):
-    print(f"📥 Downloading full video {video_id}...")
-    if os.path.exists(output_path):
-        print("✅ Video already downloaded!")
-        return output_path
-        
-    ydl_opts = {
-        'format': 'b', # Best single file (mp4) to avoid ffmpeg merging issues
-        'outtmpl': output_path,
-        'quiet': True,
-        'noplaylist': True,
-    }
+def download_video_clip(video_id: str, start_time: int, end_time: int, output_path: str):
+    print(f"📥 Downloading ONLY the viral 60 seconds from {video_id}...")
+    import subprocess
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([video_url])
-    return output_path
+    # We add a 3 second buffer before and after just to be safe with keyframes
+    safe_start = max(0, int(start_time) - 3)
+    safe_end = int(end_time) + 3
+    
+    cmd = [
+        "yt-dlp",
+        "-f", "b",
+        "--download-sections", f"*{safe_start}-{safe_end}",
+        "--force-keyframes-at-cuts",
+        "-o", output_path,
+        video_url
+    ]
+    
+    try:
+        subprocess.run(cmd, check=True)
+        print("✅ Viral clip segment downloaded successfully!")
+        return output_path
+    except Exception as e:
+        print(f"❌ Failed to download clip: {e}")
+        return None
 
 def edit_viral_clip(video_path: str, start_time: int, end_time: int, channel_name: str, output_path: str):
     print("✂️ Cutting and cropping video into a Short...")
@@ -155,16 +163,26 @@ def generate_viral_clip(video_id: str, channel_name: str):
     print(f"✨ AI Found Viral Moment! {data['start_time']}s to {data['end_time']}s")
     print(f"📝 Title: {data['title']}")
     
-    # 3. Download the video
+    # 3. Download the clip
     assets_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
     os.makedirs(assets_dir, exist_ok=True)
     full_video_path = os.path.join(assets_dir, f"full_{video_id}.mp4")
     
-    download_video(video_id, full_video_path)
+    download_video_clip(video_id, data['start_time'], data['end_time'], full_video_path)
+    
+    # Adjust timestamps since we downloaded a slice
+    new_start = 3 if int(data['start_time']) >= 3 else int(data['start_time'])
+    new_end = new_start + (int(data['end_time']) - int(data['start_time']))
     
     # 4. Edit it
     final_short_path = os.path.join(assets_dir, f"viral_short_{video_id}.mp4")
-    edit_viral_clip(full_video_path, data['start_time'], data['end_time'], channel_name, final_short_path)
+    edit_viral_clip(full_video_path, new_start, new_end, channel_name, final_short_path)
+    
+    # Clean up
+    try:
+        os.remove(full_video_path)
+    except:
+        pass
     
     # 5. Upload to YouTube
     from modules.youtube_upload import upload_to_youtube
@@ -185,11 +203,11 @@ def generate_viral_clip(video_id: str, channel_name: str):
     }
 
 def get_random_latest_video():
-    print("🔍 Searching for a trending video from top Indian gamers...")
+    print("🔍 Searching for a trending LIVESTREAM from top Indian gamers...")
     channels = [
-        {"name": "Techno Gamerz", "url": "https://www.youtube.com/@TechnoGamerzOfficial/videos"},
-        {"name": "Triggered Insaan", "url": "https://www.youtube.com/@TriggeredInsaan/videos"},
-        {"name": "Live Insaan", "url": "https://www.youtube.com/@LiveInsaan/videos"}
+        {"name": "Techno Gamerz", "url": "https://www.youtube.com/@TechnoGamerzOfficial/streams"},
+        {"name": "Triggered Insaan", "url": "https://www.youtube.com/@TriggeredInsaan/streams"},
+        {"name": "Live Insaan", "url": "https://www.youtube.com/@LiveInsaan/streams"}
     ]
     import random
     channel = random.choice(channels)
